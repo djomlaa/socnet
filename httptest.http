@@ -1,0 +1,30 @@
+@host = http://localhost:8789  
+
+POST {{host}}/api/users
+Content-Type: application/json
+
+{
+    "email" : "rade@m.gmail",
+    "username" : "rade"
+}
+
+###
+
+# @name login
+POST {{host}}/api/login
+Content-Type: application/json
+
+{
+    "email" : "mladen@example.org"
+}
+
+###
+
+GET {{host}}/api/auth_user
+Authorization: Bearer {{login.response.body.token}}
+
+
+###
+
+POST {{host}}/api/users/milutin/toggle_follow
+Authorization: Bearer {{login.response.body.token}}
