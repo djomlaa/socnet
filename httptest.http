@@ -28,3 +28,8 @@ Authorization: Bearer {{login.response.body.token}}
 
 POST {{host}}/api/users/milutin/toggle_follow
 Authorization: Bearer {{login.response.body.token}}
+
+###
+
+GET {{host}}/api/users/mladen
+Authorization: Bearer {{login.response.body.token}}

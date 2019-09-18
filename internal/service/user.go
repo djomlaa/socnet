@@ -34,6 +34,17 @@ type User struct {
 	Username string `json:"username,omitempty"`
 }
 
+// UserProfile model
+type UserProfile struct {
+	User
+	Email          string `json:"email,omitempty"`
+	FollowersCount int    `json:"followers_count"`
+	FolloweesCount int    `json:"followees_count"`
+	Me             bool   `json:"me,omitempty"`
+	Following      bool   `json:"following,omitempty"`
+	Followeed      bool   `json:"followeed,omitempty"`
+}
+
 // ToggleFollowOutput response
 type ToggleFollowOutput struct {
 	Following      bool `json:"following"`
@@ -72,6 +83,56 @@ func (s *Service) CreateUser(ctx context.Context, email, username string) error 
 	}
 
 	return nil
+}
+
+// User profile
+func (s *Service) User(ctx context.Context, username string) (UserProfile, error) {
+
+	var u UserProfile
+
+	username = strings.TrimSpace(username)
+	if !reUsername.MatchString(username) {
+		return u, ErrInvalidUsername
+	}
+
+	uid, auth := ctx.Value(KeyAuthUserID).(int64)
+
+	args := []interface{}{username}
+	dest := []interface{}{&u.ID, &u.Email, &u.FollowersCount, &u.FolloweesCount}
+
+	query := "SELECT id, email, followers_count, followees_count "
+	if auth {
+		query += ", " +
+			"followers.follower_id IS NOT NULL as following, " +
+			"followees.followee_id IS NOT NULL as followeed "
+		dest = append(dest, &u.Following, &u.Followeed)
+	}
+
+	query += "FROM users "
+	if auth {
+		query += "LEFT JOIN follows AS followers on followers.follower_id = $2 AND followers.followee_id = users.id " +
+			"LEFT JOIN follows AS followees on followees.follower_id = users.id AND followees.followee_id = $2 "
+		args = append(args, uid)
+	}
+	query += "WHERE username =$1"
+
+	err := s.db.QueryRowContext(ctx, query, args...).Scan(dest...)
+	if err == sql.ErrNoRows {
+		return u, ErrUserNotFound
+	}
+
+	if err != nil {
+		return u, fmt.Errorf("could not query select user %v", err)
+	}
+
+	u.Username = username
+	u.Me = auth && uid == u.ID
+	if !u.Me {
+		u.ID = 0
+		u.Email = ""
+	}
+
+	return u, nil
 }
 
 // ToggleFollow between two users
