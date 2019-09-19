@@ -189,7 +189,7 @@ func (s *Service) ToggleFollow(ctx context.Context, username string) (ToggleFoll
 		}
 
 		query = "UPDATE users SET followers_count = followers_count - 1 WHERE id = $1 RETURNING followers_count"
-		if err = tx.QueryRowContext(ctx, query, followerID).Scan(&out.FollowersCount); err != nil {
+		if err = tx.QueryRowContext(ctx, query, followeeID).Scan(&out.FollowersCount); err != nil {
 			return out, fmt.Errorf("could not update followee followers count (-): %v", err)
 		}
 	} else {
@@ -204,7 +204,7 @@ func (s *Service) ToggleFollow(ctx context.Context, username string) (ToggleFoll
 		}
 
 		query = "UPDATE users SET followers_count = followers_count + 1 WHERE id = $1 RETURNING followers_count"
-		if err = tx.QueryRowContext(ctx, query, followerID).Scan(&out.FollowersCount); err != nil {
+		if err = tx.QueryRowContext(ctx, query, followeeID).Scan(&out.FollowersCount); err != nil {
 			return out, fmt.Errorf("could not update followee followers count (+) %v", err)
 		}
 	}
