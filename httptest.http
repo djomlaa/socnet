@@ -33,3 +33,8 @@ Authorization: Bearer {{login.response.body.token}}
 
 GET {{host}}/api/users/mladen
 Authorization: Bearer {{login.response.body.token}}
+
+###
+
+GET {{host}}/api/users?search=m&first=&after=&
+Authorization: Bearer {{login.response.body.token}}

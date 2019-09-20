@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/djomlaa/socnet/internal/service"
 	"github.com/matryer/way"
@@ -69,6 +70,22 @@ func (h *handler) user(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respond(w, u, http.StatusOK)
+
+}
+
+func (h * handler) users(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	search := q.Get("search")
+	first, _ := strconv.Atoi(q.Get("first"))
+	after := q.Get("after")	
+	uu, err := h.Users(r.Context(), search, first, after)
+
+	if err != nil {
+		respondError(w, err)
+		return
+	}
+
+	respond(w, uu, http.StatusOK)
 
 }
 
