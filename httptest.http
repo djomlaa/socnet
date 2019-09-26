@@ -35,6 +35,13 @@ GET {{host}}/api/users/mladen
 Authorization: Bearer {{login.response.body.token}}
 
 ###
+PUT {{host}}/api/auth_user/avatar
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: image/png
+
+< assets/image.png
+
+###
 
 GET {{host}}/api/users?search=m&first=&after=&
 Authorization: Bearer {{login.response.body.token}}
@@ -46,5 +53,5 @@ Authorization: Bearer {{login.response.body.token}}
 
 ###
 
-GET {{host}}/api/users/mladen/followees?first=&after=&
+GET {{host}}/api/users/momcilo/followees?first=&after=&
 Authorization: Bearer {{login.response.body.token}}

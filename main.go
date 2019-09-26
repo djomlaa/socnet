@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/djomlaa/socnet/internal/handler"
 	"github.com/djomlaa/socnet/internal/service"
@@ -14,18 +15,23 @@ import (
 
 const (
 	host     = "localhost"
-	dbport     = 5432
+	dbport   = 5432
 	user     = "postgres"
 	password = "postgres"
 	dbname   = "postgres"
 	schema   = "socnet"
-	port     = 8789
 )
 
 func main() {
 
+	var (
+		port      = env("PORT", "8789")
+		origin    = env("ORIGIN", "http://localhost:"+port)
+		brancaKey = env("BRANCA_KEY", "supersecretkeyyoushouldnotcommit")
+	)
+
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable search_path=%s",
-	host, dbport, user, password, dbname, schema)
+		host, dbport, user, password, dbname, schema)
 	db, err := sql.Open("postgres", psqlInfo)
 
 	if err != nil {
@@ -41,17 +47,25 @@ func main() {
 	}
 
 	// TODO: use service.TokenLifespan with branca
-	codec := branca.NewBranca("supersecretkeyyoushouldnotcommit")
+	codec := branca.NewBranca(brancaKey)
 	codec.SetTTL(uint32(service.TokenLifespan.Seconds()))
 
-	s := service.New(db, codec)
+	s := service.New(db, codec, origin)
 
 	h := handler.New(s)
 
-	addr := fmt.Sprintf(":%d", port)
-	log.Printf("accepting connections on port %d", port)
+	log.Printf("accepting connections on port %s", port)
 
-	if err = http.ListenAndServe(addr, h); err != nil {
+	if err = http.ListenAndServe(":"+port, h); err != nil {
 		log.Fatalf("could not start server: %v\n", err)
 	}
+}
+
+func env(key, fallbackValue string) string {
+	s := os.Getenv(key)
+	if s == "" {
+		return fallbackValue
+	}
+
+	return s
 }
