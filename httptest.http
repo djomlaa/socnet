@@ -15,7 +15,7 @@ POST {{host}}/api/login
 Content-Type: application/json
 
 {
-    "email" : "momcilo@example.org"
+    "email" : "mladen@example.org"
 }
 
 ###
@@ -55,3 +55,14 @@ Authorization: Bearer {{login.response.body.token}}
 
 GET {{host}}/api/users/momcilo/followees?first=&after=&
 Authorization: Bearer {{login.response.body.token}}
+
+###
+POST {{host}}/api/posts
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+    "content": "new post",
+    "spoilerOf": "show name here",
+    "nsfw": false
+}

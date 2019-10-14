@@ -105,6 +105,29 @@ func (s *Service) CreateUser(ctx context.Context, email, username string) error 
 	return nil
 }
 
+//
+func (s *Service) userByID(ctx context.Context, id int64) (User, error) {
+	var u User
+	var avatar sql.NullString
+
+	query := "SELECT username, avatar FROM users WHERE id = $1"
+	err := s.db.QueryRowContext(ctx, query, id).Scan(&u.Username, &avatar)
+	if err == sql.ErrNoRows {
+		return u, ErrUserNotFound
+	}
+
+	if err != nil {
+		return u, fmt.Errorf("could not query select user: %v", err)
+	}
+
+	u.ID = id
+	if avatar.Valid {
+		avatarURL := s.origin + "/img/avatars/" + avatar.String
+		u.AvatarURL = &avatarURL
+	}
+	return u, nil
+}
+
 // User profile
 func (s *Service) User(ctx context.Context, username string) (UserProfile, error) {
 
