@@ -66,3 +66,10 @@ Content-Type: application/json
     "spoilerOf": "show name here",
     "nsfw": false
 }
+
+###
+POST {{host}}/api/posts/8/toggle_like
+Authorization: Bearer {{login}}
+Content-Type: application/json
+
+###
