@@ -57,3 +57,42 @@ func (h *handler) togglePostLike(w http.ResponseWriter, r *http.Request) {
 
 	respond(w, out, http.StatusOK)
 }
+
+func (h *handler) posts(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	q := r.URL.Query()
+	last, _ := strconv.Atoi(q.Get("last"))
+	before, _ := strconv.ParseInt(q.Get("before"), 10, 64)
+
+	pp, err := h.Posts(ctx, way.Param(ctx, "username"), last, before)
+
+	if err == service.ErrInvalidUsername {
+		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+		return
+	}
+
+	if err != nil {
+		respondError(w, err)
+		return
+	}
+
+	respond(w, pp, http.StatusOK)
+}
+
+func (h *handler) post(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	postID, _ := strconv.ParseInt(way.Param(ctx, "post_id"), 10, 64)
+	p, err := h.Post(ctx, postID)
+
+	if err == service.ErrPostNotFound {
+		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+		return
+	}
+
+	if err != nil {
+		respondError(w, err)
+		return
+	}
+
+	respond(w, p, http.StatusOK)
+}

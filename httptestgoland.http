@@ -43,17 +43,17 @@ Content-Type: image/png
 
 ###
 
-GET {{host}}/api/users?search=m&first=&after=&
+GET {{host}}/api/users?search=m&first=&after=
 Authorization: Bearer {{login}}
 
 ###
 
-GET {{host}}/api/users/mladen/followers?first=&after=&
+GET {{host}}/api/users/mladen/followers?first=&after=
 Authorization: Bearer {{login}}
 
 ###
 
-GET {{host}}/api/users/momcilo/followees?first=&after=&
+GET {{host}}/api/users/momcilo/followees?first=&after=
 Authorization: Bearer {{login}}
 
 ###
@@ -62,13 +62,27 @@ Authorization: Bearer {{login}}
 Content-Type: application/json
 
 {
-    "content": "new post",
+    "content": "newer post",
     "spoilerOf": "show name here",
     "nsfw": false
 }
 
 ###
-POST {{host}}/api/posts/8/toggle_like
+POST {{host}}/api/posts/1/toggle_like
+Authorization: Bearer {{login}}
+Content-Type: application/json
+
+###
+GET {{host}}/api/users/mladen/posts?last=1&before=
+Authorization: Bearer {{login}}
+
+###
+GET {{host}}/api/posts/1
+Authorization: Bearer {{login}}
+Content-Type: application/json
+
+###
+GET {{host}}/api/timeline?last=1&before=
 Authorization: Bearer {{login}}
 Content-Type: application/json
 

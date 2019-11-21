@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"github.com/sanity-io/litter"
@@ -23,14 +24,16 @@ var (
 
 // Post model.
 type Post struct {
-	ID        int64     `json:"id"`
-	UserID    int64     `json:"-"`
-	Content   string    `json:"content"`
-	SpoilerOf *string   `json:"spoilerOf"`
-	NSFW      bool      `json:"nsfw"`
-	CreatedAt time.Time `json:"createdAt"`
-	User      *User     `json:"user,omitempty"`
-	Mine      bool      `json:"mine"`
+	ID         int64     `json:"id"`
+	UserID     int64     `json:"-"`
+	Content    string    `json:"content"`
+	SpoilerOf  *string   `json:"spoilerOf"`
+	NSFW       bool      `json:"nsfw"`
+	LikesCount int       `json:"likesCount"`
+	CreatedAt  time.Time `json:"createdAt"`
+	User       *User     `json:"user,omitempty"`
+	Mine       bool      `json:"mine"`
+	Liked      bool      `json:"liked"`
 }
 
 //ToggleLikeOutput response
@@ -143,6 +146,120 @@ func (s *Service) fanoutPost(p Post) ([]TimelineItem, error) {
 	}
 
 	return tt, nil
+}
+
+// Posts from a user in descending order with backward pagination
+func (s *Service) Posts(ctx context.Context, username string, last int, before int64) ([]Post, error) {
+	username = strings.TrimSpace(username)
+	if !reUsername.MatchString(username) {
+		return nil, ErrInvalidUsername
+	}
+
+	uid, auth := ctx.Value(KeyAuthUserID).(int64)
+	last = normalizePageSize(last)
+	query, args, err := buildQuery(`
+		SELECT id, content, spoiler_of, nsfw, likes_count, created_at
+		{{if .auth}}
+		, p.user_id = @uid AS mine
+		, pl.user_id IS NOT NULL AS liked
+		{{end}}
+		FROM posts p
+		{{if .auth}}
+		LEFT JOIN post_likes pl on pl.user_id = p.user_id and pl.post_id = p.id
+		{{end}}
+		WHERE p.user_id = (SELECT id from users u WHERE u.username = @username)
+		{{if .before}}
+		AND p.id < @before
+		{{end}}
+		ORDER BY created_at DESC
+		LIMIT @last
+	`, map[string]interface{}{
+		"uid":      uid,
+		"auth":     auth,
+		"username": username,
+		"last":     last,
+		"before":   before,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("could not build posts sql query: %v", err)
+	}
+
+	rows, err := s.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("could not query select posts: %v", err)
+	}
+	defer rows.Close()
+
+	pp := make([]Post, 0, last)
+	for rows.Next() {
+		var p Post
+		dest := []interface{}{&p.ID, &p.Content, &p.SpoilerOf, &p.NSFW, &p.LikesCount, &p.CreatedAt}
+		if auth {
+			dest = append(dest, &p.Mine, &p.Liked)
+		}
+
+		if err = rows.Scan(dest...); err != nil {
+			return nil, fmt.Errorf("could not scan posts: %v", err)
+		}
+		pp = append(pp, p)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("could not iterate posts rows: %v", err)
+	}
+
+	return pp, nil
+}
+
+// Post
+func (s *Service) Post(ctx context.Context, postID int64) (Post, error) {
+	var p Post
+	uid, auth := ctx.Value(KeyAuthUserID).(int64)
+
+	query, args, err := buildQuery(`
+		SELECT p.id, p.content, p.spoiler_of, p.nsfw, p.likes_count, p.created_at, u.username, u.avatar
+		{{if .auth}}
+		, p.user_id = @uid AS mine
+		, pl.user_id IS NOT NULL AS liked
+		{{end}}
+		FROM posts p
+		INNER JOIN users u ON p.user_id = u.id
+		{{if .auth}}
+		LEFT JOIN post_likes pl ON pl.user_id = p.user_id AND pl.post_id = p.id
+		{{end}}
+		WHERE p.id = @post_id
+	`, map[string]interface{}{
+		"uid":     uid,
+		"auth":    auth,
+		"post_id": postID,
+	})
+	if err != nil {
+		return p, fmt.Errorf("could not build post sql query: %v", err)
+	}
+	var u User
+	var avatar sql.NullString
+	dest := []interface{}{&p.ID, &p.Content, &p.SpoilerOf, &p.NSFW, &p.LikesCount, &p.CreatedAt, &u.Username, &avatar}
+	if auth {
+		dest = append(dest, &p.Mine, &p.Liked)
+	}
+
+	err = s.db.QueryRowContext(ctx, query, args...).Scan(dest...)
+	if err == sql.ErrNoRows {
+		return p, ErrPostNotFound
+	}
+
+	if err != nil {
+		return p, fmt.Errorf("could not query select post: %v", err)
+	}
+
+	if avatar.Valid {
+		avatarURL := s.origin + "/img/avatars/" + avatar.String
+		u.AvatarURL = &avatarURL
+	}
+
+	p.User = &u
+
+	return p, nil
 }
 
 // TogglePostLike
