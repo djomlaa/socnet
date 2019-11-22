@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS socnet.posts (
     spoiler_of VARCHAR,
     nsfw BOOLEAN NOT NULL,
     likes_count INT NOT NULL DEFAULT 0 CHECK (likes_count >=0)
+    comments_count INT NOT NULL DEFAULT 0 CHECK (comments_count >=0)
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -39,13 +40,34 @@ CREATE TABLE IF NOT EXISTS socnet.post_likes (
     PRIMARY KEY (user_id, post_id)
 );
 
+CREATE TABLE IF NOT EXISTS socnet.comments (
+    id SERIAL NOT NULL PRIMARY KEY,
+    user_id INT NOT NULL  REFERENCES socnet.users(id),
+    post_id INT NOT NULL REFERENCES socnet.posts(id),
+    content VARCHAR NOT NULL,
+    likes_count INT NOT NULL DEFAULT 0 CHECK (likes_count >=0),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS sorted_comments ON socnet.comments (created_at DESC);
+
+CREATE TABLE IF NOT EXISTS socnet.comment_likes (
+    user_id INT NOT NULL REFERENCES socnet.users(id),
+    comment_id INT NOT NULL REFERENCES socnet.comments(id),
+    PRIMARY KEY (user_id, comments_id)
+);
+
+
 INSERT INTO socnet.users (id, email, username) VALUES
 (1, 'mladen@example.org', 'mladen'),
 (2, 'milutin@example.org', 'milutin'),
 (3, 'momcilo@example.org', 'momcilo');
 
-INSERT INTO socnet.posts (id, user_id, content) VALUES
-(1, 1, 'sample post');
+INSERT INTO socnet.posts (id, user_id, content, comments_count) VALUES
+(1, 1, 'sample post', 1);
 
 INSERT INTO socnet.timeline (id, user_id, post_id) VALUES
 (1, 1, 1);
+
+INSERT INTO socnet.comments (id, user_id, post_id, content) VALUES
+(1, 1, 1, 'sample post');

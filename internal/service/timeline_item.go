@@ -22,7 +22,7 @@ func (s *Service) Timeline(ctx context.Context, last int, before int) ([]Timelin
 	}
 	last = normalizePageSize(last)
 	query, args, err := buildQuery(`
-		SELECT t.id, p.id, p.content, p.spoiler_of, p.nsfw, p.likes_count, p.created_at
+		SELECT t.id, p.id, p.content, p.spoiler_of, p.nsfw, p.likes_count, p.comments_count, p.created_at
 		, p.user_id = @uid AS mine
 		, pl.user_id IS NOT NULL AS liked
 		, u.username, u.avatar
@@ -61,6 +61,7 @@ func (s *Service) Timeline(ctx context.Context, last int, before int) ([]Timelin
 			&ti.Post.SpoilerOf,
 			&ti.Post.NSFW,
 			&ti.Post.LikesCount,
+			&ti.Post.CommentsCount,
 			&ti.Post.CreatedAt,
 			&ti.Post.Mine,
 			&ti.Post.Liked,

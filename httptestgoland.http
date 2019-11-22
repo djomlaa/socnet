@@ -73,7 +73,7 @@ Authorization: Bearer {{login}}
 Content-Type: application/json
 
 ###
-GET {{host}}/api/users/mladen/posts?last=1&before=
+GET {{host}}/api/users/mladen/posts?last=&before=
 Authorization: Bearer {{login}}
 
 ###
@@ -82,7 +82,26 @@ Authorization: Bearer {{login}}
 Content-Type: application/json
 
 ###
-GET {{host}}/api/timeline?last=1&before=
+GET {{host}}/api/timeline?last=&before=
+Authorization: Bearer {{login}}
+Content-Type: application/json
+
+###
+POST {{host}}/api/posts/1/comments
+Authorization: Bearer {{login}}
+Content-Type: application/json
+
+{
+  "content": "aaaaaaa"
+}
+
+###
+GET {{host}}/api/posts/1/comments?last=2
+Authorization: Bearer {{login}}
+Content-Type: application/json
+
+###
+POST {{host}}/api/comments/1/toggle_like
 Authorization: Bearer {{login}}
 Content-Type: application/json
 
