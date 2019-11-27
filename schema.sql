@@ -57,6 +57,17 @@ CREATE TABLE IF NOT EXISTS socnet.comment_likes (
     PRIMARY KEY (user_id, comments_id)
 );
 
+CREATE TABLE IF NOT EXISTS socnet.notifications (
+    id SERIAL NOT NULL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES socnet.users(id),
+    actors VARCHAR[] NOT NULL,
+    type VARCHAR NOT NULL,
+    read BOOLEAN NOT NULL DEFAULT false,
+    issued_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS sorted_notifications ON socnet.notifications (issued_at DESC);
+
 
 INSERT INTO socnet.users (id, email, username) VALUES
 (1, 'mladen@example.org', 'mladen'),

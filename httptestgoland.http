@@ -12,7 +12,7 @@ POST {{host}}/api/login
 Content-Type: application/json
 
 {
-    "email" : "mladen@example.org"
+    "email" : "momcilo@example.org"
 }
 
 > {% client.global.set("login", response.body.token); %}
@@ -26,7 +26,7 @@ Authorization: Bearer {{login}}
 
 ###
 
-POST {{host}}/api/users/mladen/toggle_follow
+POST {{host}}/api/users/momcilo/toggle_follow
 Authorization: Bearer {{login}}
 
 ###
@@ -102,6 +102,11 @@ Content-Type: application/json
 
 ###
 POST {{host}}/api/comments/1/toggle_like
+Authorization: Bearer {{login}}
+Content-Type: application/json
+
+###
+GET {{host}}/api/notifications
 Authorization: Bearer {{login}}
 Content-Type: application/json
 
